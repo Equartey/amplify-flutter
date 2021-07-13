@@ -22,20 +22,20 @@ class GraphQLRequest<T> {
   String document;
   Map<String, dynamic> variables = {};
   String cancelToken = api_UUID.UUID.getUUID();
-  String castPath;
+  String decodePath;
   ModelType modelType;
 
   // ignore: public_member_api_docs
   GraphQLRequest(
       {@required this.document,
       Map<String, dynamic> variables,
-      String castPath,
+      String decodePath,
       ModelType modelType}) {
     if (variables != null) {
       this.variables = variables;
     }
-    if (castPath != null) {
-      this.castPath = castPath;
+    if (decodePath != null) {
+      this.decodePath = decodePath;
     }
     if (modelType != null) {
       this.modelType = modelType;

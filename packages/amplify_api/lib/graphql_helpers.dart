@@ -64,14 +64,14 @@ class GraphQLHelpers {
     return GraphQLRequest<T>(
         document: doc,
         variables: variables,
-        castPath: "$modelName",
+        decodePath: "$modelName",
         modelType: modelType);
   }
 
   static GraphQLRequest<T> list<T>(ModelSchema schema, {QueryPredicate where}) {
     Map<String, dynamic> whereMap =
         where != null ? where.serializeAsMap() : null;
-
+  
     var modelName = schema.pluralName;
     var fieldsMap = schema.fields;
     var filterPredicate = "filter: ";

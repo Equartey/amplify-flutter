@@ -94,11 +94,11 @@ class _GraphQLApiViewState extends State<GraphQLApiView> {
 
   getItem() async {
     var id = '141caecf-61c0-40e9-afe1-f6101b4e3346';
-    
+
     var operation =
         await Amplify.API.query<Blog>(request: GraphQLHelpers.get(Blog.classType, Blog.schema, id));
     _lastOperation = operation;
-
+    
     var response = await operation.response;
     Blog data = response.data;
     
