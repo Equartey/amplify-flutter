@@ -18,7 +18,7 @@ import 'dart:typed_data';
 import 'dart:convert';
 
 import 'package:amplify_core/types/index.dart';
-import 'package:amplify_datastore_plugin_interface/amplify_datastore_plugin_interface.dart';
+import 'package:amplify_datastore_plugin_interface/amplify_datastore_plugin_interface.dart' as DataStoreDependency;
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:amplify_core/types/exception/AmplifyExceptionMessages.dart';
@@ -160,10 +160,10 @@ class AmplifyAPIMethodChannel extends AmplifyAPI {
       // Parse response for ModelType
       GraphQLResponse<T> response;
 
-      if (T is Model) {
-        print("castPath: " + request.castPath);
+      if (T is DataStoreDependency.Model) {
+        print("castPath: " + request.decodePath);
         Map<String, dynamic> o = json.decode(result['data']);        
-        request.castPath.split(".").forEach((element) {
+        request.decodePath.split(".").forEach((element) {
           o = o[element];
         });
 
