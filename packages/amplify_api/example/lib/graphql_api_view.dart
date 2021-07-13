@@ -13,9 +13,12 @@
  * permissions and limitations under the License.
  */
 
+import 'package:amplify_api/graphql_helpers.dart';
 import 'package:amplify_flutter/amplify.dart';
 import 'package:flutter/material.dart';
 import 'package:amplify_api/amplify_api.dart';
+
+import 'models/Blog.dart';
 
 class GraphQLApiView extends StatefulWidget {
   bool isAmplifyConfigured;
@@ -66,18 +69,18 @@ class _GraphQLApiViewState extends State<GraphQLApiView> {
   }
 
   query() async {
-    String graphQLDocument = '''query MyQuery {
-      listBlogs {
-        items {
-          id
-          name
-          createdAt
-        }
-      }
-    }''';
+    // String graphQLDocument = '''query MyQuery {
+    //   listBlogs {
+    //     items {
+    //       id
+    //       name
+    //       createdAt
+    //     }
+    //   }
+    // }''';
 
     var operation = await Amplify.API
-        .query<String>(request: GraphQLRequest(document: graphQLDocument));
+        .query<String>(request: GraphQLHelpers.list(Blog.schema));
     _lastOperation = operation;
 
     var response = await operation.response;
@@ -86,6 +89,29 @@ class _GraphQLApiViewState extends State<GraphQLApiView> {
     print('Result data: ' + data);
     setState(() {
       _result = data;
+    });
+  }
+
+  getItem() async {
+    var id = '141caecf-61c0-40e9-afe1-f6101b4e3346';
+    
+    var operation =
+        await Amplify.API.query<Blog>(request: GraphQLHelpers.get(Blog.classType, Blog.schema, id));
+    _lastOperation = operation;
+
+    var response = await operation.response;
+    Blog data = response.data;
+    
+    // Blog.classType.fromJson(jsonData)
+
+    if (data != null) {
+      print('Found data: ' + data.toString());
+    } else {
+      print('Data is null :c ');
+    }
+
+    setState(() {
+      _result = data.toString();
     });
   }
 
@@ -98,9 +124,13 @@ class _GraphQLApiViewState extends State<GraphQLApiView> {
       }
     }''';
 
+    Blog blog = Blog(name: "Sample Blog");
+
     var operation = await Amplify.API.mutate(
+        // request: GraphQLHelpers.create(blog, Blog.schema));
         request: GraphQLRequest<String>(
-            document: graphQLDocument, variables: {"name": "Test App Blog"}));
+            document: graphQLDocument,
+            variables: {"name": "Can you find me Blog"}));
     _lastOperation = operation;
 
     var response = await operation.response;
@@ -131,6 +161,12 @@ class _GraphQLApiViewState extends State<GraphQLApiView> {
           child: ElevatedButton(
             onPressed: widget.isAmplifyConfigured ? query : null,
             child: const Text('Run Query'),
+          ),
+        ),
+        Center(
+          child: ElevatedButton(
+            onPressed: widget.isAmplifyConfigured ? getItem : null,
+            child: const Text('Find Query'),
           ),
         ),
         Padding(padding: EdgeInsets.all(10.0)),

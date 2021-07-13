@@ -15,8 +15,10 @@
 
 import 'dart:async';
 import 'dart:typed_data';
+import 'dart:convert';
 
 import 'package:amplify_core/types/index.dart';
+import 'package:amplify_datastore_plugin_interface/amplify_datastore_plugin_interface.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:amplify_core/types/exception/AmplifyExceptionMessages.dart';
@@ -37,10 +39,10 @@ class AmplifyAPIMethodChannel extends AmplifyAPI {
       if (e.code == "AmplifyAlreadyConfiguredException") {
         throw AmplifyAlreadyConfiguredException(
             AmplifyExceptionMessages.alreadyConfiguredDefaultMessage,
-            recoverySuggestion: AmplifyExceptionMessages.alreadyConfiguredDefaultSuggestion);
+            recoverySuggestion:
+                AmplifyExceptionMessages.alreadyConfiguredDefaultSuggestion);
       } else {
-        throw AmplifyException.fromMap(
-            Map<String, String>.from(e.details));
+        throw AmplifyException.fromMap(Map<String, String>.from(e.details));
       }
     }
   }
@@ -155,8 +157,22 @@ class AmplifyAPIMethodChannel extends AmplifyAPI {
 
       final errors = _deserializeGraphQLResponseErrors(result);
 
-      GraphQLResponse<T> response =
-          GraphQLResponse<T>(data: result['data'], errors: errors);
+      // Parse response for ModelType
+      GraphQLResponse<T> response;
+
+      if (T is Model) {
+        print("castPath: " + request.castPath);
+        Map<String, dynamic> o = json.decode(result['data']);        
+        request.castPath.split(".").forEach((element) {
+          o = o[element];
+        });
+
+        // need a check to ensure modelType
+        T res = request.modelType.fromJson(o) as T;
+        response = GraphQLResponse<T>(data: res, errors: errors);
+      } else {
+        response = GraphQLResponse<T>(data: result['data'], errors: errors);
+      }
 
       return response;
     } on PlatformException catch (e) {

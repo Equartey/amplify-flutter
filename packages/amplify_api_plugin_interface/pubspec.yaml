@@ -11,6 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
   amplify_core: 0.1.6
+  amplify_datastore_plugin_interface: 0.1.6
   meta: ^1.1.8
   uuid: ^3.0.1
 

@@ -13,18 +13,32 @@
  * permissions and limitations under the License.
  */
 
+import 'package:amplify_datastore_plugin_interface/amplify_datastore_plugin_interface.dart';
 import 'package:flutter/foundation.dart';
+import '../UUID.dart' as api_UUID; // need to fix import
 
-import '../UUID.dart';
 
 class GraphQLRequest<T> {
   String document;
   Map<String, dynamic> variables = {};
-  String cancelToken = UUID.getUUID();
+  String cancelToken = api_UUID.UUID.getUUID();
+  String castPath;
+  ModelType modelType;
 
-  GraphQLRequest({@required this.document, Map<String, dynamic> variables}) {
+  // ignore: public_member_api_docs
+  GraphQLRequest(
+      {@required this.document,
+      Map<String, dynamic> variables,
+      String castPath,
+      ModelType modelType}) {
     if (variables != null) {
       this.variables = variables;
+    }
+    if (castPath != null) {
+      this.castPath = castPath;
+    }
+    if (modelType != null) {
+      this.modelType = modelType;
     }
   }
 
