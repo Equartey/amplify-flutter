@@ -17,41 +17,29 @@ import 'package:integration_test/integration_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:amplify_flutter/amplify.dart';
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
-import 'package:uuid/uuid.dart';
 
-import 'package:amplify_auth_cognito_example/amplifyconfiguration.dart';
-
-final uuid = Uuid();
+import 'utils/mock_data.dart';
+import 'utils/setup_utils.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  final username = 'TEMP_USER-${uuid.v4()}';
-  final password = uuid.v4();
+  final username = generateUsername();
+  final password = generatePassword();
 
   group('signIn and signOut', () {
     setUpAll(() async {
-      if (!Amplify.isConfigured) {
-        final authPlugin = AmplifyAuthCognito();
-        await Amplify.addPlugins([authPlugin]);
-        await Amplify.configure(amplifyconfig);
-      }
+      await configureAuth();
 
       await Amplify.Auth.signUp(
           username: username,
           password: password,
           options: CognitoSignUpOptions(userAttributes: {
-            'email': 'test-amplify-flutter-${uuid.v4()}@test${uuid.v4()}.com',
-            'phone_number': '+15555551234'
+            'email': generateEmail(),
+            'phone_number': mockPhoneNumber
           }));
 
-      // ensure no user is currently signed in
-      try {
-        await Amplify.Auth.signOut();
-        // ignore: unused_catch_clause
-      } on AuthException catch (e) {
-        // Ignore a signOut error because we only care when someone signed in.
-      }
+      await signOutUser();
     });
 
     testWidgets('should signIn a user', (WidgetTester tester) async {
