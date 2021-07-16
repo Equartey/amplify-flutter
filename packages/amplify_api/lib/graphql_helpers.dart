@@ -68,10 +68,7 @@ class GraphQLHelpers {
         modelType: modelType);
   }
 
-  static GraphQLRequest<T> list<T>(ModelSchema schema, {QueryPredicate where}) {
-    Map<String, dynamic> whereMap =
-        where != null ? where.serializeAsMap() : null;
-  
+  static GraphQLRequest<T> list<T>(ModelSchema schema, {QueryPredicate? where}) {
     var modelName = schema.pluralName;
     var fieldsMap = schema.fields;
     var filterPredicate = "filter: ";
@@ -83,7 +80,7 @@ class GraphQLHelpers {
       });
     }
 
-    if (whereMap != null) {
+    if (where != null) {
       // print(where.serializeAsMap().toString());
       Map<String, dynamic> whereMap = where.serializeAsMap();
       String field =
@@ -123,7 +120,7 @@ class GraphQLHelpers {
     Map<String, dynamic> variables = {};
 
     if (fieldsMap == null) {
-      return null;
+      return GraphQLRequest<T>(document: "");
     }
 
     fieldsMap.forEach((field, val) {
@@ -137,14 +134,14 @@ class GraphQLHelpers {
       }
 
       // Model has a BelongsTo relationship
-      // if (val.association != null && val.association.associationType == ModelAssociationEnum.BelongsTo){
-      //   funcParamList.add(_getFuncParam(val.association.targetName, val.type.fieldType));
-      //   statementParamList.add(_getStmtParam(val.association.targetName));
-      //   // TODO: Get child model name
-      //   variables[val.association.targetName] = model.toJson()[field]["id"];
-      // } else if(model.toJson()[field] != null && val.name != 'id'){
-      //   variables[field] = model.toJson()[field];
-      // }
+      if (val.association != null && val.association.associationType == ModelAssociationEnum.BelongsTo){
+        funcParamList.add(_getFuncParam(val.association.targetName, val.type.fieldType));
+        statementParamList.add(_getStmtParam(val.association.targetName));
+        // TODO: Get child model name
+        variables[val.association.targetName] = model.toJson()[field]["id"];
+      } else if(model.toJson()[field] != null && val.name != 'id'){
+        variables[field] = model.toJson()[field];
+      }
     });
 
     String doc = '''mutation Create$modelName(${funcParamList.join(", ")}) {

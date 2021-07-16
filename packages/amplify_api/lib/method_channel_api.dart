@@ -18,7 +18,8 @@ import 'dart:typed_data';
 import 'dart:convert';
 
 import 'package:amplify_core/types/index.dart';
-import 'package:amplify_datastore_plugin_interface/amplify_datastore_plugin_interface.dart' as DataStoreDependency;
+import 'package:amplify_datastore_plugin_interface/amplify_datastore_plugin_interface.dart'
+    as DataStoreDependency;
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:amplify_core/types/exception/AmplifyExceptionMessages.dart';
@@ -160,26 +161,36 @@ class AmplifyAPIMethodChannel extends AmplifyAPI {
       final errors = _deserializeGraphQLResponseErrors(result);
 
       // Parse response for ModelType
-      GraphQLResponse<T> response;
-
-      if (T is DataStoreDependency.Model) {
-        print("castPath: " + request.decodePath);
-        Map<String, dynamic> o = json.decode(result['data']);        
-        request.decodePath.split(".").forEach((element) {
-          o = o[element];
-        });
-
-        // need a check to ensure modelType
-        T res = request.modelType.fromJson(o) as T;
-        response = GraphQLResponse<T>(data: res, errors: errors);
-      } else {
-        response = GraphQLResponse<T>(data: result['data'] ?? '', errors: errors);
-      }
+      GraphQLResponse<T> response =
+          _deserializeResponse(request: request, data: result['data'], errors: errors);
 
       return response;
     } on PlatformException catch (e) {
       throw _deserializeException(e);
     }
+  }
+
+  GraphQLResponse<T> _deserializeResponse<T>({
+      required GraphQLRequest request, 
+      required dynamic data, 
+      required List<GraphQLResponseError> errors}) {
+    GraphQLResponse<T> response;
+
+    // if (T is DataStoreDependency.Model) {
+    if (request.modelType != null) {
+      Map<String, dynamic> o = json.decode(data);
+      request.decodePath?.split(".").forEach((element) {
+        o = o[element];
+      });
+
+      // need a check to ensure modelType
+      T res = request.modelType?.fromJson(o) as T;
+      response = GraphQLResponse<T>(data: res, errors: errors);
+    } else {
+      response = GraphQLResponse<T>(data: data, errors: errors);
+    }
+
+    return response;
   }
 
   Future<void> _setupSubscription({
