@@ -9,7 +9,7 @@ class ModelQueries extends ModelQueriesInterface {
       ModelType modelType, String id) {
     ModelSchema schema = GraphQLRequestFactory.getSchema(modelType);
 
-    String modelName = schema.name;
+    String modelName = schema.pluralName ?? '';
     Map<String, ModelField?>? fieldsMap = schema.fields;
 
     List<String> fieldsList = [];
@@ -20,7 +20,7 @@ class ModelQueries extends ModelQueriesInterface {
     }
 
     Map<String, ModelFieldTypeEnum>? variableInput = {
-      "id": ModelFieldTypeEnum.model
+      // "id": ModelFieldTypeEnum.model
     };
 
     return GraphQLRequestFactory.buildQuery(
@@ -29,7 +29,7 @@ class ModelQueries extends ModelQueriesInterface {
         variableInput: variableInput,
         id: id,
         requestType: GraphQLRequestType.query,
-        requestOperation: GraphQLRequestOperation.get);
+        requestOperation: GraphQLRequestOperation.list);
   }
 }
 
@@ -62,8 +62,8 @@ class GraphQLRequestFactory extends GraphQLRequestFactoryInterface {
   }
 
   @override
-  static GraphQLRequest<T> buildQuery<T extends Model>(
-      {required String name,
+  static GraphQLRequest<T> buildQuery<T extends Model>({
+      required String name,
       required List<String> fields,
       required Map<String, ModelFieldTypeEnum>? variableInput,
       required String id,
@@ -92,7 +92,14 @@ class GraphQLRequestFactory extends GraphQLRequestFactoryInterface {
       }
     }
 
-    String doc = '''$reqTypeStr $reqOperationStr$name${varInputUpperStr} { $reqOperationStr$name$varInputLowerStr { ${fields.join(' ')} } }''';
+    String fieldString = fields.join(' ');
+
+    if (requestOperation == GraphQLRequestOperation.list) {
+        fieldString = 'items { ${fieldString} } nextToken';
+      }
+
+    String doc =
+        '''$reqTypeStr $reqOperationStr$name${varInputUpperStr} { $reqOperationStr$name$varInputLowerStr { $fieldString } }''';
 
     // TODO: create input map for variables & connect with current variableInput
     var variables = {"id": id};
