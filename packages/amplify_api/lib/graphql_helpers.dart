@@ -1,3 +1,18 @@
+/*
+ * Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * You may not use this file except in compliance with the License.
+ * A copy of the License is located at
+ *
+ *  http://aws.amazon.com/apache2.0
+ *
+ * or in the "license" file accompanying this file. This file is distributed
+ * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
+
 import 'package:amplify_api_plugin_interface/amplify_api_plugin_interface.dart';
 import 'package:amplify_datastore_plugin_interface/amplify_datastore_plugin_interface.dart';
 import 'package:flutter/foundation.dart';
@@ -9,7 +24,7 @@ class ModelQueries extends ModelQueriesInterface {
       ModelType modelType, String id) {
     ModelSchema schema = GraphQLRequestFactory.getSchema(modelType);
 
-    String modelName = schema.pluralName ?? '';
+    String modelName = schema.name;
     Map<String, ModelField?>? fieldsMap = schema.fields;
 
     List<String> fieldsList = [];
@@ -20,7 +35,7 @@ class ModelQueries extends ModelQueriesInterface {
     }
 
     Map<String, ModelFieldTypeEnum>? variableInput = {
-      // "id": ModelFieldTypeEnum.model
+      "id": ModelFieldTypeEnum.model
     };
 
     return GraphQLRequestFactory.buildQuery(
@@ -29,7 +44,7 @@ class ModelQueries extends ModelQueriesInterface {
         variableInput: variableInput,
         id: id,
         requestType: GraphQLRequestType.query,
-        requestOperation: GraphQLRequestOperation.list);
+        requestOperation: GraphQLRequestOperation.get);
   }
 }
 
@@ -62,8 +77,8 @@ class GraphQLRequestFactory extends GraphQLRequestFactoryInterface {
   }
 
   @override
-  static GraphQLRequest<T> buildQuery<T extends Model>({
-      required String name,
+  static GraphQLRequest<T> buildQuery<T extends Model>(
+      {required String name,
       required List<String> fields,
       required Map<String, ModelFieldTypeEnum>? variableInput,
       required String id,
