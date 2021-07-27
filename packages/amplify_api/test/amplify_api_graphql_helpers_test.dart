@@ -14,7 +14,7 @@
  */
 
 import 'package:amplify_api/amplify_api.dart';
-import 'package:amplify_api/graphql_helpers.dart';
+import 'package:amplify_api/graphql/model_queries.dart';
 import 'package:amplify_api_plugin_interface/amplify_api_plugin_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -29,7 +29,7 @@ void main() {
     String expected =
         "query getBlog(\$id: ID!) { getBlog(id: \$id) { id name createdAt } }";
 
-    GraphQLRequest req = ModelQueries.get<Blog>(Blog.classType, id);
+    GraphQLRequest<Blog> req = ModelQueries.get<Blog>(Blog.classType, id);
 
     expect(req.document, expected);
     expect(req.variables.containsValue(id), true);
