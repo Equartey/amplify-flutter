@@ -13,6 +13,8 @@
  * permissions and limitations under the License.
  */
 
+import 'dart:convert';
+
 import 'package:amplify_api/amplify_api.dart';
 import 'package:amplify_datastore_plugin_interface/amplify_datastore_plugin_interface.dart';
 import 'package:flutter/foundation.dart';
@@ -131,5 +133,39 @@ class GraphQLRequestFactory {
     Map<String, dynamic>? variables = id != null ? {"id": id} : {};
 
     return GraphQLRequest<T>(document: doc, variables: variables);
+  }
+}
+
+class GraphQLResponseDecoder implements GraphQLResponseDecoderInterface {
+  // Singleton methods/properties
+  // usage: GraphQLResponseDecoder.instance;
+  GraphQLResponseDecoder._();
+
+  static final GraphQLResponseDecoder _instance = GraphQLResponseDecoder._();
+
+  static GraphQLResponseDecoder get instance => _instance;
+
+  @override
+  GraphQLResponse<T> decode<T>(
+      {required GraphQLRequest request,
+      required dynamic data,
+      required List<GraphQLResponseError> errors}) {
+    GraphQLResponse<T> response;
+
+    // if (T is DataStoreDependency.Model) {
+    if (request.modelType != null) {
+      Map<String, dynamic> o = json.decode(data);
+      request.decodePath?.split(".").forEach((element) {
+        o = o[element];
+      });
+
+      // need a check to ensure modelType
+      T res = request.modelType?.fromJson(o) as T;
+      response = GraphQLResponse<T>(data: res, errors: errors);
+    } else {
+      response = GraphQLResponse<T>(data: data, errors: errors);
+    }
+
+    return response;
   }
 }

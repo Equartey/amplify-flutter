@@ -14,6 +14,7 @@
  */
 
 import 'package:amplify_api/amplify_api.dart';
+import 'package:amplify_api/src/graphql/graphql_request_factory.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'resources/Blog.dart';
@@ -44,5 +45,27 @@ void main() {
       return;
     }
     throw new Exception("Expected an ApiException");
+  });
+
+  test('Query returns a decoded ModelType when provided a type', () async {
+    const queryResult = {
+      'id': 'ec0c71cb-8b88-4c57-86d7-6758bf4cba4a',
+      'name': 'Test Blog 1',
+      'createdAt': '2020-12-10T21:25:51.252Z'
+    };
+
+    String id = UUID.getUUID();
+    GraphQLRequest<Blog> req = ModelQueries.get<Blog>(Blog.classType, id);
+    List<GraphQLResponseError> errors = [];
+    String data = '''{
+        "getBlog": {
+            "createdAt": "2021-07-21T22: 23: 33.707Z",
+            "id": "f70d1142-12da-4564-a699-966a75f96db6",
+            "name": "TestAppBlog"
+        }
+    }''';
+
+    GraphQLResponse<Blog> response = GraphQLResponseDecoder.instance
+        .decode<Blog>(request: req, data: data, errors: errors);
   });
 }
