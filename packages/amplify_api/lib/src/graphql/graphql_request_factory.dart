@@ -13,34 +13,11 @@
  * permissions and limitations under the License.
  */
 
-import 'package:amplify_api_plugin_interface/amplify_api_plugin_interface.dart';
+import 'package:amplify_api/amplify_api.dart';
 import 'package:amplify_datastore_plugin_interface/amplify_datastore_plugin_interface.dart';
 import 'package:flutter/foundation.dart';
-import '../amplify_api.dart';
 
-class ModelQueriesFactory extends ModelQueriesInterface {
-  // Singleton methods/properties
-  // usage: ModelQueriesFactory.instance;
-  ModelQueriesFactory._();
-
-  static final ModelQueriesFactory _instance = ModelQueriesFactory._();
-
-  static ModelQueriesFactory get instance => _instance;
-
-  @override
-  GraphQLRequest<T> get<T extends Model>(ModelType<T> modelType, String id) {
-    Map<String, String> variableInput = {"id": "ID"};
-
-    return GraphQLRequestFactory().buildQuery<T>(
-        modelType: modelType,
-        variableInput: variableInput,
-        id: id,
-        requestType: GraphQLRequestType.query,
-        requestOperation: GraphQLRequestOperation.get);
-  }
-}
-
-class GraphQLRequestFactory extends GraphQLRequestFactoryInterface {
+class GraphQLRequestFactory {
   String _getModelType(ModelFieldTypeEnum? val) {
     switch (val) {
       case ModelFieldTypeEnum.string:
@@ -55,12 +32,11 @@ class GraphQLRequestFactory extends GraphQLRequestFactoryInterface {
   }
 
   String _getFieldsFromModelType(ModelSchema schema) {
-    Map<String, ModelField?>? fieldsMap = schema.fields;
-    return fieldsMap?.entries
-            .map((entry) => entry.value?.association == null ? entry.key : '')
-            .toList()
-            .join(' ') ??
-        '';
+    Map<String, ModelField> fieldsMap = schema.fields!;
+    return fieldsMap.entries
+        .map((entry) => entry.value.association == null ? entry.key : '')
+        .toList()
+        .join(' ');
   }
 
   ModelSchema _getAndValidateSchema(
@@ -80,6 +56,12 @@ class GraphQLRequestFactory extends GraphQLRequestFactoryInterface {
             recoverySuggestion:
                 'Pass in a valid modelProvider instance while instantiating APIPlugin or provide a valid ModelType'));
 
+    if (schema.fields == null) {
+      throw ApiException('Schema found does not have a fields property',
+          recoverySuggestion:
+              'Pass in a valid modelProvider instance while instantiating APIPlugin');
+    }
+
     if (operation == GraphQLRequestOperation.list &&
         schema.pluralName == null) {
       throw ApiException('No schema name found',
@@ -97,7 +79,6 @@ class GraphQLRequestFactory extends GraphQLRequestFactoryInterface {
    *  Example: 
    *    query getBlog($id: ID!) { getBlog(id: $id) { id name createdAt } }
   */
-  @override
   GraphQLRequest<T> buildQuery<T extends Model>(
       {required ModelType modelType,
       required Map<String, String>? variableInput,
