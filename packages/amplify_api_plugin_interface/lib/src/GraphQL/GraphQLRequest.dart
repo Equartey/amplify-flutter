@@ -28,8 +28,7 @@ class GraphQLRequest<T> {
       {required this.document,
       this.variables = const {},
       this.decodePath = null,
-      this.modelType = null}) {
-  }
+      this.modelType = null}) {}
 
   Map<String, dynamic> serializeAsMap() {
     final Map<String, dynamic> result = <String, dynamic>{};

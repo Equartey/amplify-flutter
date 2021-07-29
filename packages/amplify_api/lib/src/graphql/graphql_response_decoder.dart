@@ -13,22 +13,25 @@ class GraphQLResponseDecoder {
 
   GraphQLResponse<T> decode<T>(
       {required GraphQLRequest request,
-      required dynamic data,
+      required String data,
       required List<GraphQLResponseError> errors}) {
-    GraphQLResponse<T> response;
-
-    // if (T is Model) {
+    // if no ModelType fallback to default
     if (request.modelType == null) {
-      return GraphQLResponse<T>(data: data, errors: errors);
+      return GraphQLResponse<T>(data: data as T, errors: errors);
     }
 
-    Map<String, dynamic> o = json.decode(data);
-    request.decodePath?.split(".").forEach((element) {
-      o = o[element];
-    });
-    print(o.toString());
-    T res = request.modelType?.fromJson(o) as T;
+    if (request.decodePath == null) {
+      throw ApiException('No decodePath found',
+          recoverySuggestion: 'Include decodePath when creating a request');
+    }
 
-    return GraphQLResponse<T>(data: res, errors: errors);
+    Map<String, dynamic> dataJson = json.decode(data);
+    request.decodePath!.split(".").forEach((element) {
+      dataJson = dataJson[element];
+    });
+
+    T decodedData = request.modelType!.fromJson(dataJson) as T;
+
+    return GraphQLResponse<T>(data: decodedData, errors: errors);
   }
 }
