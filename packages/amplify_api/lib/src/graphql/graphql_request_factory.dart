@@ -19,21 +19,36 @@ import 'package:amplify_api/amplify_api.dart';
 import 'package:amplify_datastore_plugin_interface/amplify_datastore_plugin_interface.dart';
 import 'package:flutter/foundation.dart';
 
+class DocumentInputs {
+  // Upper document input: ($id: ID!)
+  final String upper;
+  // Lower document input: (id: $id)
+  final String lower;
+  const DocumentInputs(this.upper, this.lower);
+}
+
 class GraphQLRequestFactory {
-  String _getModelType(ModelFieldTypeEnum? val) {
+  GraphQLRequestFactory._();
+
+  static final GraphQLRequestFactory _instance = GraphQLRequestFactory._();
+
+  static GraphQLRequestFactory get instance => _instance;
+
+  String _getModelType(ModelFieldTypeEnum val) {
     switch (val) {
       case ModelFieldTypeEnum.string:
         return "String";
       case ModelFieldTypeEnum.int:
-        return "int";
+        return "Int";
       case ModelFieldTypeEnum.model:
         return "ID";
       default:
-        return "Error: UnknownType!";
+        return "Error: unsupported type!";
     }
   }
 
   String _getFieldsFromModelType(ModelSchema schema) {
+    // schema has been validated & schema.fields is non-nullable
     Map<String, ModelField> fieldsMap = schema.fields!;
     return fieldsMap.entries
         .map((entry) => entry.value.association == null ? entry.key : '')
@@ -52,7 +67,7 @@ class GraphQLRequestFactory {
     }
 
     ModelSchema schema = provider.modelSchemas.firstWhere(
-        (elem) => provider.getModelTypeByModelName(elem.name) == modelType,
+        (elem) => elem.name == modelType.modelName(),
         orElse: () => throw ApiException(
             'No schema found for the ModelType provided',
             recoverySuggestion:
@@ -74,52 +89,61 @@ class GraphQLRequestFactory {
     return schema;
   }
 
-  /*
-   *  buildQuery()
-   *
-   *  
+  DocumentInputs _buildDocumentInputs(
+      ModelSchema schema, GraphQLRequestOperation operation) {
+    String upperOutput = '';
+    String lowerOutput = '';
+    List<String> upperList = [];
+    List<String> lowerList = [];
+
+    // build inputs based on request operation
+    switch (operation) {
+      case GraphQLRequestOperation.get:
+        upperList.add(r"$id: ID!");
+        lowerList.add(r"id: $id");
+        lowerOutput = "(${lowerList.join(", ")})";
+        break;
+      case GraphQLRequestOperation.list:
+        break;
+      default:
+        schema.fields!.forEach((field, val) {
+          upperList.add("\$$field: ${_getModelType(val.type.fieldType)}");
+          lowerList.add("$field: \$$field");
+        });
+        lowerOutput = "(input: { ${lowerList.join(", ")} })";
+    }
+
+    if (upperList.length == 0 || lowerList.length == 0) {
+      return DocumentInputs("", "");
+    }
+
+    upperOutput = "(${upperList.join(", ")})";
+
+    return DocumentInputs(upperOutput, lowerOutput);
+  }
+
+/**
    *  Example: 
-   *    query getBlog($id: ID!) { getBlog(id: $id) { id name createdAt } }
+   *    query getBlog($id: ID!, $content: String) { getBlog(id: $id, content: $content) { id name createdAt } }
   */
   GraphQLRequest<T> buildQuery<T extends Model>(
       {required ModelType modelType,
-      required Map<String, String>? variableInput,
-      required String? id,
+      Model? model,
+      String? id,
       required GraphQLRequestType requestType,
       required GraphQLRequestOperation requestOperation}) {
     ModelSchema schema = _getAndValidateSchema(modelType, requestOperation);
 
+    // e.g. "Blog"
     String name = schema.name;
-
     // fields to retrieve, e.g. "id name createdAt"
     String fields = _getFieldsFromModelType(schema);
-
     // e.g. "query"
-    String requestTypeVal = describeEnum(requestType.toString());
+    String requestTypeVal = describeEnum(requestType);
     // e.g. "get"
-    String requestOperationVal = describeEnum(requestOperation.toString());
-
-    // Upper document input: ($id: ID!)
-    var varInputUpperStr = '';
-    // Lower document input: (id: $id)
-    var varInputLowerStr = '';
-
-    if (variableInput != null && variableInput.isNotEmpty) {
-      List<String> variableInputUpper = [];
-      List<String> variableInputLower = [];
-
-      variableInput.forEach((key, value) {
-        variableInputUpper.add("\$$key: $value!");
-        variableInputLower.add("$key: \$$key");
-      });
-
-      varInputUpperStr = "(${variableInputUpper.join(", ")})";
-      if (requestOperation == GraphQLRequestOperation.get) {
-        varInputLowerStr = "(${variableInputLower.join(", ")})";
-      } else {
-        varInputLowerStr = "(input: { ${variableInputLower.join(", ")} })";
-      }
-    }
+    String requestOperationVal = describeEnum(requestOperation);
+    // {upper: "($id: ID!)", lower: "(id: $id)"}
+    DocumentInputs docInputs = _buildDocumentInputs(schema, requestOperation);
 
     if (requestOperation == GraphQLRequestOperation.list) {
       name = schema.pluralName!;
@@ -127,10 +151,11 @@ class GraphQLRequestFactory {
     }
 
     String doc =
-        '''$requestTypeVal $requestOperationVal$name${varInputUpperStr} { $requestOperationVal$name$varInputLowerStr { $fields } }''';
+        '''$requestTypeVal $requestOperationVal$name${docInputs.upper} { $requestOperationVal$name${docInputs.lower} { $fields } }''';
 
-    // TODO: create input map for variables & connect with current variableInput
-    Map<String, dynamic>? variables = id != null ? {"id": id} : {};
+    // TODO: convert model to variable input for non-get operations
+    Map<String, dynamic> variables =
+        requestOperation == GraphQLRequestOperation.get ? {"id": id} : {};
 
     return GraphQLRequest<T>(document: doc, variables: variables);
   }

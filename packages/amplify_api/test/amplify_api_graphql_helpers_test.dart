@@ -13,6 +13,7 @@
  * permissions and limitations under the License.
  */
 
+import 'package:flutter/foundation.dart';
 import 'package:amplify_api/amplify_api.dart';
 import 'package:amplify_api/src/graphql/graphql_request_factory.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -26,12 +27,12 @@ void main() {
 
     String id = UUID.getUUID();
     String expected =
-        "query getBlog(\$id: ID!) { getBlog(id: \$id) { id name createdAt } }";
+        r"query getBlog($id: ID!) { getBlog(id: $id) { id name createdAt } }";
 
     GraphQLRequest<Blog> req = ModelQueries.get<Blog>(Blog.classType, id);
 
     expect(req.document, expected);
-    expect(req.variables.containsValue(id), true);
+    expect(mapEquals(req.variables, {'id': id}), isTrue);
   });
 
   test("should handle no ModelProvider instance", () {
@@ -44,7 +45,7 @@ void main() {
           "Pass in a modelProvider instance while instantiating APIPlugin");
       return;
     }
-    throw new Exception("Expected an ApiException");
+    fail("Expected an ApiException");
   });
 
   test('Query returns a decoded ModelType when provided a type', () async {
