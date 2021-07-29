@@ -16,7 +16,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:amplify_api/graphql/graphql_helpers.dart';
+import 'package:amplify_api/src/graphql/graphql_response_decoder.dart';
 import 'package:amplify_core/types/index.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
