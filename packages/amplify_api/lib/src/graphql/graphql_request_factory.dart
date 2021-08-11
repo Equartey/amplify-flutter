@@ -26,6 +26,7 @@ class DocumentInputs {
 }
 
 class GraphQLRequestFactory {
+  final int _DEFAULT_DEPTH = 1;
   GraphQLRequestFactory._();
 
   static final GraphQLRequestFactory _instance = GraphQLRequestFactory._();
@@ -56,14 +57,39 @@ class GraphQLRequestFactory {
   }
 
   String _getFieldsFromModelType(
-      ModelSchema schema, GraphQLRequestOperation operation) {
+      ModelSchema schema,
+      GraphQLRequestType requestType,
+      GraphQLRequestOperation operation,
+      int depth,
+      bool isNested) {
     // schema has been validated & schema.fields is non-nullable
     String fields = schema.fields!.entries
-        .map((entry) => entry.value.association == null ? entry.key : '')
+        .map((entry) {
+          if (depth > 0 &&
+              entry.value.association != null &&
+              describeEnum(entry.value.association!.associationType) !=
+                  "BelongsTo" &&
+              requestType == GraphQLRequestType.query) {
+            var nestedModelName = entry.value.association?.associatedType;
+            var nested = _getAndValidateSchema(nestedModelName, operation);
+
+            String nestedFields = _getFieldsFromModelType(
+                nested, requestType, operation, depth - 1, true);
+
+            var pluralName = nested.pluralName!.toLowerCase();
+            return "$pluralName  { $nestedFields }";
+          }
+
+          if (entry.value.association != null) {
+            return '';
+          }
+
+          return entry.key;
+        })
         .toList()
         .join(' ');
 
-    if (operation == GraphQLRequestOperation.list) {
+    if (operation == GraphQLRequestOperation.list || isNested) {
       fields = 'items { $fields } nextToken';
     }
 
@@ -71,7 +97,7 @@ class GraphQLRequestFactory {
   }
 
   ModelSchema _getAndValidateSchema(
-      ModelType modelType, GraphQLRequestOperation operation) {
+      String? modelName, GraphQLRequestOperation operation) {
     ModelProviderInterface? provider = AmplifyAPI.instance.getModelProvider();
 
     if (provider == null) {
@@ -80,8 +106,14 @@ class GraphQLRequestFactory {
               'Pass in a modelProvider instance while instantiating APIPlugin');
     }
 
+    if (modelName == null) {
+      throw ApiException(
+        'No modelType provided in schema lookup',
+      );
+    }
+
     ModelSchema schema = provider.modelSchemas.firstWhere(
-        (elem) => elem.name == modelType.modelName(),
+        (elem) => elem.name == modelName,
         orElse: () => throw ApiException(
             'No schema found for the ModelType provided',
             recoverySuggestion:
@@ -154,7 +186,9 @@ class GraphQLRequestFactory {
       required GraphQLRequestOperation requestOperation,
       required Map<String, dynamic> variables}) {
     // retrieve schema from ModelType and validate required properties
-    ModelSchema schema = _getAndValidateSchema(modelType, requestOperation);
+    ModelSchema schema =
+        _getAndValidateSchema(modelType.modelName(), requestOperation);
+    int depth = requestType == GraphQLRequestType.query ? _DEFAULT_DEPTH : 0;
 
     // e.g. "Blog" or "Blogs"
     String name = _getName(schema, requestOperation);
@@ -166,7 +200,8 @@ class GraphQLRequestFactory {
     DocumentInputs documentInputs =
         _buildDocumentInputs(schema, requestOperation);
     // e.g. "id name createdAt" - fields to retrieve
-    String fields = _getFieldsFromModelType(schema, requestOperation);
+    String fields = _getFieldsFromModelType(
+        schema, requestType, requestOperation, depth, false);
     // e.g. "getBlog"
     String requestName = "$requestOperationVal$name";
     // e.g. query getBlog($id: ID!, $content: String) { getBlog(id: $id, content: $content) { id name createdAt } }

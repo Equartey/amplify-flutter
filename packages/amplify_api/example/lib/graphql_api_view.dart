@@ -13,6 +13,7 @@
  * permissions and limitations under the License.
  */
 
+import 'package:amplify_api_example/models/Blog.dart';
 import 'package:amplify_flutter/amplify.dart';
 import 'package:flutter/material.dart';
 import 'package:amplify_api/amplify_api.dart';
@@ -66,26 +67,20 @@ class _GraphQLApiViewState extends State<GraphQLApiView> {
   }
 
   query() async {
-    String graphQLDocument = '''query MyQuery {
-      listBlogs {
-        items {
-          id
-          name
-          createdAt
-        }
-      }
-    }''';
+    var req = ModelQueries.list(Blog.classType,
+        modelPagination: ModelPagination(limit: 1));
+    // var req = ModelQueries.get(
+    //     Blog.classType, "149025ab-6c0e-4aee-8f50-bacc64e1f483");
 
-    var operation = await Amplify.API
-        .query<String>(request: GraphQLRequest(document: graphQLDocument));
+    var operation = await Amplify.API.query(request: req);
     _lastOperation = operation;
 
     var response = await operation.response;
     var data = response.data;
 
-    print('Result data: ' + data);
+    print('Result data: ' + data.toString());
     setState(() {
-      _result = data;
+      _result = data.toString();
     });
   }
 
@@ -97,18 +92,17 @@ class _GraphQLApiViewState extends State<GraphQLApiView> {
         createdAt
       }
     }''';
-
-    var operation = await Amplify.API.mutate(
-        request: GraphQLRequest<String>(
-            document: graphQLDocument, variables: {"name": "Test App Blog"}));
+    var req = ModelMutations.create(Blog(name: "Test Blog"));
+    print(req.document);
+    var operation = await Amplify.API.mutate(request: req);
     _lastOperation = operation;
 
     var response = await operation.response;
     var data = response.data;
 
-    print('Result data: ' + data);
+    print('Result data: ' + data.toString());
     setState(() {
-      _result = data;
+      _result = data.toString();
     });
   }
 

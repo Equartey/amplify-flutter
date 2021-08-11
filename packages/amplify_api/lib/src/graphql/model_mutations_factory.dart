@@ -12,9 +12,13 @@ class ModelMutationsFactory extends ModelMutationsInterface {
 
   static ModelMutationsFactory get instance => _instance;
 
+  static _getModelForInput(Model model) {
+    return model.toJson()..removeWhere((key, value) => value == null);
+  }
+
   @override
   GraphQLRequest<T> create<T extends Model>(T model) {
-    Map<String, dynamic> variables = {"input": model.toJson()};
+    Map<String, dynamic> variables = {"input": _getModelForInput(model)};
 
     return GraphQLRequestFactory.instance.buildRequest(
         model: model,
@@ -45,7 +49,7 @@ class ModelMutationsFactory extends ModelMutationsInterface {
 
   @override
   GraphQLRequest<T> update<T extends Model>(T model, {QueryPredicate? where}) {
-    Map<String, dynamic> variables = {"input": model.toJson()};
+    Map<String, dynamic> variables = {"input": _getModelForInput(model)};
 
     return GraphQLRequestFactory.instance.buildRequest(
         model: model,
