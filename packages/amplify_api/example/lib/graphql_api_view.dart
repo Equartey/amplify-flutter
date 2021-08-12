@@ -67,11 +67,11 @@ class _GraphQLApiViewState extends State<GraphQLApiView> {
   }
 
   query() async {
-    var req = ModelQueries.list(Blog.classType,
-        modelPagination: ModelPagination(limit: 1));
-    // var req = ModelQueries.get(
-    //     Blog.classType, "149025ab-6c0e-4aee-8f50-bacc64e1f483");
-
+    // var req = ModelQueries.list(Blog.classType,
+    //     modelPagination: ModelPagination(limit: 1));
+    var req = ModelQueries.get(
+        Blog.classType, "ffb44d92-d717-4672-9a60-6bab7118d7b6");
+    print(req.document);
     var operation = await Amplify.API.query(request: req);
     _lastOperation = operation;
 
@@ -79,8 +79,9 @@ class _GraphQLApiViewState extends State<GraphQLApiView> {
     var data = response.data;
 
     print('Result data: ' + data.toString());
+    print(data.posts);
     setState(() {
-      _result = data.toString();
+      _result = data.toString() + data.posts.toString();
     });
   }
 

@@ -55,6 +55,15 @@ class GraphQLResponseDecoder {
               "Current GraphQLResponse is non-nullable, please insure item exists before fetching");
     }
 
+    dataJson!.forEach((key, value) {
+      if (dataJson![key] is Map && dataJson![key].containsKey('items')) {
+        var serializedData = (dataJson![key]["items"] as List)
+            .map((e) => {"serializedData": e})
+            .toList();
+        dataJson![key] = serializedData;
+      }
+    });
+
     T decodedData = request.modelType!.fromJson(dataJson!) as T;
 
     return GraphQLResponse<T>(data: decodedData, errors: errors);
