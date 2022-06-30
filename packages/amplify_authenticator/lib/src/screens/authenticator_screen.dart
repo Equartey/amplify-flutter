@@ -70,7 +70,8 @@ class AuthenticatorScreen extends StatelessAuthenticatorComponent {
     if (isDesktop) {
       containerWidth = AuthenticatorContainerConstants.mediumWidth;
     } else {
-      containerWidth = AuthenticatorContainerConstants.smallWidth;
+      double mobileWidth = MediaQuery.of(context).size.width;
+      containerWidth = mobileWidth;
     }
 
     const signInUpTabs = [AuthenticatorStep.signIn, AuthenticatorStep.signUp];
@@ -97,9 +98,11 @@ class AuthenticatorScreen extends StatelessAuthenticatorComponent {
         throw StateError('Invalid step: $this');
     }
 
-    return Container(
-      constraints: BoxConstraints(maxWidth: containerWidth),
-      child: SafeArea(child: child),
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: containerWidth),
+        child: SafeArea(child: child),
+      ),
     );
   }
 
